@@ -11,12 +11,17 @@
 import React, { useState, useEffect } from 'react';
 
 import { createStackNavigator } from '@react-navigation/stack';
-import SignInScreen from './SignInScreen';
-import HomeScreen from './HomeScreen';
+import SignInScreen from './screen/SignInScreen';
+import HomeScreen from './screen/HomeScreen';
 import { NavigationContainer } from '@react-navigation/native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
+import { getDataByKey } from './utilities/storage';
+import { kToken, kAuthState } from './constant/keyAlias';
+import {
+  RecoilRoot, useRecoilValue, useRecoilState,
+} from 'recoil';
+import { authState } from './atoms/auth';
 
-declare const global: { HermesInternal: null | {} };
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
 
@@ -26,16 +31,23 @@ const authScreens = {
 
 const userScreens = {
   Home: HomeScreen,
+  Home2: HomeScreen,
 };
 
 
-const App = () => {
-  const [isLogin, setIsLogin] = useState<Boolean>(false);
-  useEffect(() => {
+const MainApp = () => {
+  const [auth, setAuth] = useRecoilState<{ token?: string }>(authState);
+  const checkLogin = async () => {
+    const token = await getDataByKey(kToken) || undefined;
+    setAuth({ token: token });
+  }
 
+  useEffect(() => {
+    checkLogin();
   }, []);
+
   const Home = () => {
-    return <Stack.Navigator>
+    return <Stack.Navigator headerMode={'none'}>
       {Object.entries(userScreens).map(([name, component]) => (
         <Stack.Screen key={name} name={name} component={component} />
       ))}
@@ -43,23 +55,26 @@ const App = () => {
   }
 
   const renderNavigation = () => {
-    if (isLogin) {
+    if (auth && auth.token) {
       return <Drawer.Navigator initialRouteName="Home">
         <Drawer.Screen name="Home" component={Home} />
-        <Drawer.Screen name="Notifications" component={Home} />
       </Drawer.Navigator>
     } else {
-      return <Stack.Navigator>
+      return <Stack.Navigator headerMode={'none'}>
         {Object.entries(authScreens).map(([name, component]) => (
           <Stack.Screen key={name} name={name} component={component} />
         ))}
       </Stack.Navigator>
     }
   }
-  return (
-    <NavigationContainer>
-      {renderNavigation()}
-    </NavigationContainer>
-  );
+  return renderNavigation();
 };
+
+const App = () => {
+  return <RecoilRoot>
+    <NavigationContainer>
+      <MainApp />
+    </NavigationContainer>
+  </RecoilRoot>
+}
 export default App;
