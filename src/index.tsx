@@ -21,6 +21,8 @@ import {
   RecoilRoot, useRecoilValue, useRecoilState,
 } from 'recoil';
 import { authState } from './atoms/auth';
+import { useWindowDimensions } from 'react-native';
+import DrawerScreen from './screen/Drawer';
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -36,6 +38,8 @@ const userScreens = {
 
 
 const MainApp = () => {
+  const dimensions = useWindowDimensions();
+
   const [auth, setAuth] = useRecoilState<{ token?: string }>(authState);
   const checkLogin = async () => {
     const token = await getDataByKey(kToken) || undefined;
@@ -55,8 +59,12 @@ const MainApp = () => {
   }
 
   const renderNavigation = () => {
+
     if (auth && auth.token) {
-      return <Drawer.Navigator initialRouteName="Home">
+      return <Drawer.Navigator
+        drawerType={'slide'}
+        drawerContent={DrawerScreen}
+        initialRouteName="Home">
         <Drawer.Screen name="Home" component={Home} />
       </Drawer.Navigator>
     } else {
